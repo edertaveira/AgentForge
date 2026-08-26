@@ -1,0 +1,12 @@
+{
+  "id": "AF-101",
+  "title": "Add priority to tasks",
+  "description": "Allow TaskBoard tasks to have low, medium, or high priority.",
+  "acceptanceCriteria": [
+    { "id": "AC-1", "text": "A task accepts low, medium, or high priority." },
+    { "id": "AC-2", "text": "Priority defaults to medium when omitted." },
+    { "id": "AC-3", "text": "Unsupported priority values are rejected." }
+  ],
+  "labels": ["fixture:task-priority", "backend"],
+  "source": "local"
+}
