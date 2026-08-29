@@ -68,3 +68,11 @@ During development, the Git status collector removed the leading space from ` M 
 
 Use a fine-grained token restricted to this repository. Never show `.env`, the token creation
 screen, request headers, or terminal history containing credentials during recording.
+
+## MCP local checkpoint
+
+1. Explain MCP as a standard boundary for context and tools, not as an autonomous agent.
+2. Show the three registered tools and their read-only annotations.
+3. Run `npm run mcp:demo` and show that the model discovers the Jira item and baseline files.
+4. Emphasize the static tool filter: the demo exposes only work item and repository context.
+5. Stop the server and show that no workspace, Jira, or GitHub write occurred.

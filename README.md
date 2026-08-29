@@ -80,6 +80,23 @@ Pull Request against `main`. It can only publish `src/task.js` and `test/task.te
 `examples/taskboard-template/`. The run identifier binds approval to the exact evidence and diff
 already reviewed, so publication never reruns the model. It never merges the Pull Request.
 
+### Inspect context through local MCP
+
+The local MCP server uses the `stdio` transport and exposes three read-only tools:
+
+- `get_work_item`: reads the configured local or Jira item;
+- `get_repository_context`: reads only the immutable TaskBoard baseline allowlist;
+- `get_run_evidence`: reads a bounded summary of one reviewed run.
+
+Run the recording demonstration with:
+
+```bash
+npm run mcp:demo
+```
+
+The demo agent is filtered to the first two tools. The server exposes no write, shell, GitHub, or
+credential-reading tool, and closes in a `finally` block after the agent run.
+
 If `node --version` reports a release older than 22, switch to a supported runtime before recording or testing the OpenAI provider.
 
 The demo copies the immutable `examples/taskboard-baseline` into an isolated run directory under
