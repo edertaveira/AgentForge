@@ -14,7 +14,7 @@ test("runs the local delivery flow to READY_FOR_HUMAN", async () => {
   const orchestrator = new AgentForgeOrchestrator(
     {
       tasks,
-      template: path.join(projectRoot, "examples/taskboard-template"),
+      template: path.join(projectRoot, "examples/taskboard-baseline"),
       runs: path.join(temporary, "runs"),
     },
     undefined,

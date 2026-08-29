@@ -27,6 +27,7 @@ const [command, commandArgument] = process.argv.slice(2);
 const commandWorkItemId = commandArgument?.startsWith("--") ? undefined : commandArgument;
 const workItemId = commandWorkItemId ?? process.env.JIRA_ISSUE_KEY ?? "AF-101";
 const externalWriteApproved = process.argv.slice(2).includes("--approve-external");
+const deterministicLocal = process.argv.slice(2).includes("--local");
 const approvedRunId = process.argv.slice(2)
   .find((argument) => argument.startsWith("--run="))
   ?.slice("--run=".length);
@@ -37,8 +38,11 @@ if (!["run", "check-jira", "check-github", "publish-github"].includes(command ??
   console.error("Usage: node dist/src/cli.js <run|check-jira|check-github|publish-github> [WORK_ITEM_ID] [--approve-external]");
   process.exitCode = 1;
 } else {
-  const providerConfig = analysisProviderFromEnvironment();
-  const taskSourceConfig = taskSourceFromEnvironment();
+  const runtimeEnvironment = deterministicLocal
+    ? { ...process.env, ANALYSIS_PROVIDER: "local", TASK_SOURCE: "local" }
+    : process.env;
+  const providerConfig = analysisProviderFromEnvironment(runtimeEnvironment);
+  const taskSourceConfig = taskSourceFromEnvironment(runtimeEnvironment);
   const tasksDirectory = path.join(projectRoot, "fixtures/tasks");
   const taskBoard = createTaskBoard(taskSourceConfig, tasksDirectory);
   const runsDirectory = path.join(projectRoot, ".agentforge/runs");
@@ -97,7 +101,7 @@ if (!["run", "check-jira", "check-github", "publish-github"].includes(command ??
   const orchestrator = new AgentForgeOrchestrator(
     {
       tasks: tasksDirectory,
-      template: path.join(projectRoot, "examples/taskboard-template"),
+      template: path.join(projectRoot, "examples/taskboard-baseline"),
       runs: runsDirectory,
     },
     createAnalysisAgent(providerConfig),
