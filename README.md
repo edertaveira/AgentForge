@@ -25,14 +25,18 @@ npm test
 npm run demo
 ```
 
-The default demo does not make an API request. To use the optional OpenAI analyst:
+The default demo does not make an API request. To use the optional OpenAI analyst with the Jira
+source configured later in this guide:
 
 ```bash
 export ANALYSIS_PROVIDER=openai
 export OPENAI_API_KEY="your-key"
 export OPENAI_MODEL="gpt-5-mini"
-npm run demo
+npm run demo:jira
 ```
+
+`npm run demo` always forces the local task and analyst, even when `.env` contains real Jira or
+OpenAI credentials. This keeps the first lesson offline and reproducible.
 
 Never commit `.env` or place a real key in course files or recordings.
 
@@ -78,7 +82,11 @@ already reviewed, so publication never reruns the model. It never merges the Pul
 
 If `node --version` reports a release older than 22, switch to a supported runtime before recording or testing the OpenAI provider.
 
-The demo copies `examples/taskboard-template` into an isolated run directory under `.agentforge/runs`, initializes a temporary Git repository, applies the task, runs its tests, reviews the diff, and writes an evidence bundle plus a simulated pull request.
+The demo copies the immutable `examples/taskboard-baseline` into an isolated run directory under
+`.agentforge/runs`, initializes a temporary Git repository, applies the task, runs its tests,
+reviews the diff, and writes an evidence bundle plus a simulated pull request. Real GitHub
+publication maps approved files into `examples/taskboard-template`, which may evolve after merges
+without making future recordings non-reproducible.
 
 ## Safety properties
 

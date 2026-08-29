@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/test/*.test.js",
-    "demo": "npm run build && node dist/src/cli.js run AF-101",
+    "demo": "npm run build && node dist/src/cli.js run AF-101 --local",
     "demo:jira": "npm run build && node dist/src/cli.js run",
     "jira:check": "npm run build && node dist/src/cli.js check-jira",
     "github:check": "npm run build && node dist/src/cli.js check-github",

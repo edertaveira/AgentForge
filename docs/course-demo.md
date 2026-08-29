@@ -30,7 +30,8 @@ npm run demo
 
 Show, in this order:
 
-1. `fixtures/tasks/AF-101.json`: requested task and acceptance criteria.
+1. `fixtures/tasks/AF-101.json`: requested task and acceptance criteria; explain that the run starts
+   from the immutable `examples/taskboard-baseline`.
 2. CLI output: status, tests, review, and the warning that no Pull Request was published.
 3. `.agentforge/runs/<run>/workspace`: isolated copy, not the source template.
 4. `artifacts/evidence.json`: facts, hypotheses, changed files, tests, review, and pending human actions.
