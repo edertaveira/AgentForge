@@ -13,6 +13,8 @@
     "demo": "npm run build && node dist/src/cli.js run AF-101",
     "demo:jira": "npm run build && node dist/src/cli.js run",
     "jira:check": "npm run build && node dist/src/cli.js check-jira",
+    "github:check": "npm run build && node dist/src/cli.js check-github",
+    "github:publish": "npm run build && node dist/src/cli.js publish-github",
     "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true }); rmSync('.agentforge', { recursive: true, force: true });\""
   },
   "devDependencies": {

@@ -56,3 +56,14 @@ During development, the Git status collector removed the leading space from ` M 
 - The flow can implement arbitrary tasks.
 - More agents automatically improve quality.
 - MCP or Jira makes the agent correct.
+
+## GitHub publication checkpoint
+
+1. Run `npm run demo:jira` and inspect the generated diff and evidence.
+2. Run `npm run github:check`; emphasize that it is read-only.
+3. Explain that ordinary demos cannot publish externally.
+4. Run `npm run github:publish -- --approve-external --run=<reviewed-run-id>` only after the visible human decision.
+5. Open the returned URL and review the Pull Request. Do not merge automatically.
+
+Use a fine-grained token restricted to this repository. Never show `.env`, the token creation
+screen, request headers, or terminal history containing credentials during recording.
