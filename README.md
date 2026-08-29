@@ -68,12 +68,13 @@ The normal demo remains simulated. After inspecting its workspace diff and evide
 requires a different command with an explicit external-write flag:
 
 ```bash
-npm run github:publish -- --approve-external
+npm run github:publish -- --approve-external --run=<reviewed-run-id>
 ```
 
 The publisher creates one commit on a new `agentforge/<work-item>-<timestamp>` branch and opens a
 Pull Request against `main`. It can only publish `src/task.js` and `test/task.test.js`, mapped under
-`examples/taskboard-template/`. It never merges the Pull Request.
+`examples/taskboard-template/`. The run identifier binds approval to the exact evidence and diff
+already reviewed, so publication never reruns the model. It never merges the Pull Request.
 
 If `node --version` reports a release older than 22, switch to a supported runtime before recording or testing the OpenAI provider.
 
