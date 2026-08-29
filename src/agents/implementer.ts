@@ -56,7 +56,7 @@ export class ImplementerAgent {
       throw new Error("Implementation is blocked by unanswered material questions");
     }
 
-    if (!item.labels.includes("fixture:task-priority")) {
+    if (!supportsTaskPriorityRecipe(item, brief)) {
       throw new Error(`No safe local implementation recipe for ${item.id}`);
     }
 
@@ -75,4 +75,33 @@ export class ImplementerAgent {
       ],
     };
   }
+}
+
+export function supportsTaskPriorityRecipe(
+  item: WorkItem,
+  brief: ImplementationBrief,
+): boolean {
+  if (item.labels.includes("fixture:task-priority")) {
+    return true;
+  }
+
+  const taskEvidence = [
+    item.title,
+    item.description,
+    ...item.acceptanceCriteria.map((criterion) => criterion.text),
+    ...(item.technicalContext ?? []),
+  ].join(" ").toLocaleLowerCase("en-US");
+  const requiredEvidence = [
+    "createtask",
+    "priority",
+    "medium",
+    "invalid priority",
+    "src/task.js",
+    "test/task.test.js",
+  ];
+  const normalizedFiles = new Set(brief.likelyFiles.map((file) => file.replace(/^\.\//, "")));
+
+  return requiredEvidence.every((evidence) => taskEvidence.includes(evidence)) &&
+    normalizedFiles.has("src/task.js") &&
+    normalizedFiles.has("test/task.test.js");
 }

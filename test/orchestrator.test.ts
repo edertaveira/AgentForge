@@ -3,17 +3,23 @@ import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { LocalTaskBoard } from "../src/adapters/local-task-board.js";
 import { AgentForgeOrchestrator } from "../src/orchestrator.js";
 
 const projectRoot = process.cwd();
 
 test("runs the local delivery flow to READY_FOR_HUMAN", async () => {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "agentforge-test-"));
-  const orchestrator = new AgentForgeOrchestrator({
-    tasks: path.join(projectRoot, "fixtures/tasks"),
-    template: path.join(projectRoot, "examples/taskboard-template"),
-    runs: path.join(temporary, "runs"),
-  });
+  const tasks = path.join(projectRoot, "fixtures/tasks");
+  const orchestrator = new AgentForgeOrchestrator(
+    {
+      tasks,
+      template: path.join(projectRoot, "examples/taskboard-template"),
+      runs: path.join(temporary, "runs"),
+    },
+    undefined,
+    new LocalTaskBoard(tasks),
+  );
 
   const outcome = await orchestrator.run("AF-101", "test-operator");
 

@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { WorkItem } from "../domain/contracts.js";
+import type { TaskBoard } from "./task-board.js";
 
-export class LocalTaskBoard {
+export class LocalTaskBoard implements TaskBoard {
   constructor(private readonly fixturesDirectory: string) {}
 
   async getTask(id: string): Promise<WorkItem> {
@@ -30,6 +31,8 @@ function assertWorkItem(value: unknown): asserts value is WorkItem {
     typeof item.description !== "string" ||
     !Array.isArray(item.acceptanceCriteria) ||
     !Array.isArray(item.labels) ||
+    (item.technicalContext !== undefined && !Array.isArray(item.technicalContext)) ||
+    (item.outOfScope !== undefined && !Array.isArray(item.outOfScope)) ||
     item.source !== "local"
   ) {
     throw new Error("Invalid work item fixture");

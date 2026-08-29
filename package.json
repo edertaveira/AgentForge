@@ -11,10 +11,16 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/test/*.test.js",
     "demo": "npm run build && node dist/src/cli.js run AF-101",
+    "demo:jira": "npm run build && node dist/src/cli.js run",
+    "jira:check": "npm run build && node dist/src/cli.js check-jira",
     "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true }); rmSync('.agentforge', { recursive: true, force: true });\""
   },
   "devDependencies": {
     "@types/node": "22.15.3",
     "typescript": "5.8.3"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.17.0",
+    "zod": "^4.4.3"
   }
 }

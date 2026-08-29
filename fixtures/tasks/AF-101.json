@@ -1,12 +1,28 @@
 {
   "id": "AF-101",
   "title": "Add priority to tasks",
-  "description": "Allow TaskBoard tasks to have low, medium, or high priority.",
+  "description": "Update the local TaskBoard fixture so the function signature becomes createTask(title, priority = 'medium') and the returned task object contains the priority property.",
   "acceptanceCriteria": [
-    { "id": "AC-1", "text": "A task accepts low, medium, or high priority." },
-    { "id": "AC-2", "text": "Priority defaults to medium when omitted." },
-    { "id": "AC-3", "text": "Unsupported priority values are rejected." }
+    { "id": "AC-1", "text": "Use the positional signature createTask(title, priority = 'medium'); do not introduce an options object." },
+    { "id": "AC-2", "text": "The priority argument accepts the exact lowercase values low, medium, or high." },
+    { "id": "AC-3", "text": "Priority defaults to medium when the second argument is omitted." },
+    { "id": "AC-4", "text": "createTask throws an error containing 'invalid priority' for any other value." },
+    { "id": "AC-5", "text": "Existing title validation and status=open behavior remain unchanged." }
   ],
   "labels": ["fixture:task-priority", "backend"],
-  "source": "local"
+  "source": "local",
+  "technicalContext": [
+    "This is a local JavaScript teaching fixture, not a database-backed API.",
+    "The task factory is implemented in src/task.js.",
+    "The public API is intentionally positional for this small teaching fixture: createTask(title, priority).",
+    "Its tests are in test/task.test.js and run with node --test.",
+    "No persistence migration or backward data update is required."
+  ],
+  "outOfScope": [
+    "HTTP endpoints",
+    "database persistence",
+    "frontend or UI changes",
+    "case-insensitive normalization",
+    "publishing a Pull Request"
+  ]
 }

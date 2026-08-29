@@ -20,6 +20,8 @@ export interface WorkItem {
   acceptanceCriteria: AcceptanceCriterion[];
   labels: string[];
   source: "local" | "jira";
+  technicalContext?: string[];
+  outOfScope?: string[];
 }
 
 export interface ImplementationBrief {

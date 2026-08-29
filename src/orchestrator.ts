@@ -1,8 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { LocalTaskBoard } from "./adapters/local-task-board.js";
+import type { TaskBoard } from "./adapters/task-board.js";
 import { Workspace } from "./adapters/workspace.js";
-import { AnalystAgent } from "./agents/analyst.js";
+import type { AnalysisAgent } from "./agents/analysis-agent.js";
+import { LocalAnalystAgent } from "./agents/analyst.js";
 import { ImplementerAgent } from "./agents/implementer.js";
 import { ReviewerAgent } from "./agents/reviewer.js";
 import { TesterAgent } from "./agents/tester.js";
@@ -25,19 +26,24 @@ export interface RunOutcome {
 
 export class AgentForgeOrchestrator {
   private readonly gate = new ApprovalGate();
-  private readonly analyst = new AnalystAgent();
   private readonly implementer = new ImplementerAgent();
   private readonly tester = new TesterAgent();
   private readonly reviewer = new ReviewerAgent();
 
-  constructor(private readonly paths: AgentForgePaths) {}
+  constructor(
+    private readonly paths: AgentForgePaths,
+    private readonly analyst: AnalysisAgent = new LocalAnalystAgent(),
+    private readonly taskBoard?: TaskBoard,
+  ) {}
 
   async run(workItemId: string, approvedBy = "course-operator"): Promise<RunOutcome> {
     let status: RunStatus = "ANALYZING";
     const runId = `${workItemId}-${new Date().toISOString().replaceAll(/[:.]/g, "-")}`;
-    const taskBoard = new LocalTaskBoard(this.paths.tasks);
-    const workItem = await taskBoard.getTask(workItemId);
-    const brief = this.analyst.analyze(workItem);
+    if (!this.taskBoard) {
+      throw new Error("A task board must be configured before running AgentForge");
+    }
+    const workItem = await this.taskBoard.getTask(workItemId);
+    const brief = await this.analyst.analyze(workItem);
 
     if (brief.blockingQuestions.length > 0) {
       throw new Error(`BLOCKED: ${brief.blockingQuestions.join("; ")}`);
