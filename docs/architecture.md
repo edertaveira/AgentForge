@@ -53,6 +53,6 @@ while genuinely implementation-shaping ambiguity still produces `blockingQuestio
 - The model behavior is deterministic so the first demonstration is reproducible.
 - Only `node --test` is allowed as an execution tool.
 - Pull Request publication is simulated and always requires a separate human action.
-- Jira, MCP, and GitHub integrations are later adapters.
+- MCP and GitHub integrations are later adapters.
 
 These constraints are features of the teaching baseline, not claims of production completeness.

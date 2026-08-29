@@ -132,6 +132,41 @@ test("retries through the Atlassian API gateway for a scoped token", async () =>
   ]);
 });
 
+test("loads an issue through the scoped-token gateway without a separate connection check", async () => {
+  const requestedUrls: string[] = [];
+  const board = new JiraTaskBoard({
+    baseUrl: "https://agentforge.atlassian.net",
+    email: "course@example.com",
+    apiToken: "scoped-token",
+    fetch: async (input) => {
+      const url = input.toString();
+      requestedUrls.push(url);
+      if (url.endsWith("/_edge/tenant_info")) {
+        return Response.json({ cloudId: "cloud-123" });
+      }
+      if (url.startsWith("https://api.atlassian.com/")) {
+        return Response.json({
+          key: "AF-1",
+          fields: {
+            summary: "Add priority to tasks",
+            description: "",
+            labels: [],
+          },
+        });
+      }
+      return new Response(null, { status: 401 });
+    },
+  });
+
+  const item = await board.getTask("AF-1");
+  assert.equal(item.id, "AF-1");
+  assert.deepEqual(requestedUrls, [
+    "https://agentforge.atlassian.net/rest/api/3/issue/AF-1?fields=summary,description,labels",
+    "https://agentforge.atlassian.net/_edge/tenant_info",
+    "https://api.atlassian.com/ex/jira/cloud-123/rest/api/3/issue/AF-1?fields=summary,description,labels",
+  ]);
+});
+
 test("rejects an issue outside the configured Jira space", async () => {
   const board = new JiraTaskBoard({
     baseUrl: "https://agentforge.atlassian.net",

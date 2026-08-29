@@ -4,6 +4,7 @@ import { taskSourceFromEnvironment } from "../src/core/task-source.js";
 
 test("uses the local source by default", () => {
   assert.deepEqual(taskSourceFromEnvironment({}), { source: "local" });
+  assert.deepEqual(taskSourceFromEnvironment({ TASK_SOURCE: "" }), { source: "local" });
 });
 
 test("loads Jira source configuration from the environment", () => {

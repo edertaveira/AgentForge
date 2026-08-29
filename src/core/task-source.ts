@@ -20,7 +20,8 @@ export function taskSourceFromEnvironment(
   const hasJiraCredentials = Boolean(
     environment.JIRA_BASE_URL && environment.JIRA_EMAIL && environment.JIRA_API_TOKEN,
   );
-  const source = environment.TASK_SOURCE ?? (hasJiraCredentials ? "jira" : "local");
+  const configuredSource = environment.TASK_SOURCE?.trim();
+  const source = configuredSource || (hasJiraCredentials ? "jira" : "local");
   if (source !== "local" && source !== "jira") {
     throw new Error(`Unsupported TASK_SOURCE: ${source}`);
   }

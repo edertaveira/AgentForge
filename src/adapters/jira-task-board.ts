@@ -36,22 +36,7 @@ export class JiraTaskBoard implements TaskBoard {
   }
 
   async checkConnection(): Promise<void> {
-    let response = await this.request(`${this.apiBaseUrl}/rest/api/3/myself`, {
-      method: "GET",
-      headers: this.headers(),
-    });
-    if (response.status === 401 && this.apiBaseUrl === this.baseUrl) {
-      const scopedBaseUrl = await this.discoverScopedApiBaseUrl();
-      if (scopedBaseUrl) {
-        response = await this.request(`${scopedBaseUrl}/rest/api/3/myself`, {
-          method: "GET",
-          headers: this.headers(),
-        });
-        if (response.ok) {
-          this.apiBaseUrl = scopedBaseUrl;
-        }
-      }
-    }
+    const response = await this.requestJira("/rest/api/3/myself");
     if (!response.ok) {
       throw new Error(
         `Jira authentication check returned HTTP ${response.status}. ` +
@@ -66,13 +51,8 @@ export class JiraTaskBoard implements TaskBoard {
       throw new Error(`Work item ${id} does not belong to Jira space ${this.options.spaceKey}`);
     }
 
-    const url = new URL(`${this.apiBaseUrl}/rest/api/3/issue/${encodeURIComponent(id)}`);
-    url.searchParams.set("fields", "summary,description,labels");
-
-    const response = await this.request(url, {
-      method: "GET",
-      headers: this.headers(),
-    });
+    const path = `/rest/api/3/issue/${encodeURIComponent(id)}?fields=summary,description,labels`;
+    const response = await this.requestJira(path);
 
     if (!response.ok) {
       const hint = response.status === 401 || response.status === 403
@@ -90,6 +70,29 @@ export class JiraTaskBoard implements TaskBoard {
       Accept: "application/json",
       Authorization: `Basic ${Buffer.from(`${this.options.email}:${this.options.apiToken}`).toString("base64")}`,
     };
+  }
+
+  private async requestJira(path: string): Promise<Response> {
+    let response = await this.request(`${this.apiBaseUrl}${path}`, {
+      method: "GET",
+      headers: this.headers(),
+    });
+    if (response.status !== 401 || this.apiBaseUrl !== this.baseUrl) {
+      return response;
+    }
+
+    const scopedBaseUrl = await this.discoverScopedApiBaseUrl();
+    if (!scopedBaseUrl) {
+      return response;
+    }
+    response = await this.request(`${scopedBaseUrl}${path}`, {
+      method: "GET",
+      headers: this.headers(),
+    });
+    if (response.ok) {
+      this.apiBaseUrl = scopedBaseUrl;
+    }
+    return response;
   }
 
   private async discoverScopedApiBaseUrl(): Promise<string | undefined> {
