@@ -3,7 +3,7 @@
 ## Delivery flow
 
 ```text
-LocalTaskBoard
+TaskBoard (local fixture or read-only Jira Cloud)
      |
      v
  AnalystAgent -> ImplementationBrief
@@ -28,16 +28,31 @@ LocalTaskBoard
 
 - `domain`: stable contracts independent of Jira, GitHub, or a model vendor.
 - `adapters`: local task source and isolated filesystem implementation.
+- `JiraTaskBoard` reads summary, description, labels, and acceptance criteria through Jira Cloud REST API v3. It performs no Jira writes.
 - `agents`: one responsibility per role, with typed inputs and outputs.
 - `core`: authorization, path policy, and pull request preparation.
 - `orchestrator`: state transitions and evidence assembly.
 
+## Analysis providers
+
+The orchestrator depends on the `AnalysisAgent` interface:
+
+- `LocalAnalystAgent` provides deterministic output for tests and recordings that must not consume API credits.
+- `OpenAIAnalystAgent` uses the OpenAI Agents SDK and a Zod `outputType` to validate `ImplementationBrief` at runtime.
+
+Selecting `ANALYSIS_PROVIDER=openai` requires `OPENAI_API_KEY`. Missing credentials fail before a run begins. The model name is configurable through `OPENAI_MODEL` so the course does not bind its architecture to one model generation.
+
+The analyst follows explicit interpretation rules for ordinary JavaScript defaults and quoted
+message literals. This prevents non-material edge questions from randomly blocking a recording,
+while genuinely implementation-shaping ambiguity still produces `blockingQuestions`.
+
 ## Deliberate constraints in version 0.1
 
-- The implementation recipe supports one local fixture task (`AF-101`).
+- The implementation recipe supports the task-priority teaching scenario. It is selected from
+  labels or explicit task evidence and approved file scope, never from a hard-coded Jira number.
 - The model behavior is deterministic so the first demonstration is reproducible.
 - Only `node --test` is allowed as an execution tool.
 - Pull Request publication is simulated and always requires a separate human action.
-- Jira, MCP, GitHub, and remote model integrations are later adapters.
+- Jira, MCP, and GitHub integrations are later adapters.
 
 These constraints are features of the teaching baseline, not claims of production completeness.

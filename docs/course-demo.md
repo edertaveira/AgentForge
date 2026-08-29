@@ -10,6 +10,16 @@ npm run clean
 
 Do not display `.env`, API keys, browser sessions, or personal Git credentials.
 
+Confirm the supported runtime before recording:
+
+```bash
+node --version
+```
+
+The project requires Node.js 22 or newer.
+
+Use `ANALYSIS_PROVIDER=local` for the first deterministic recording. Record the OpenAI provider as a separate lesson after verifying the account, model access, cost, and output with a disposable key and fictitious task data.
+
 ## Record the final result first
 
 Run:
@@ -26,6 +36,8 @@ Show, in this order:
 4. `artifacts/evidence.json`: facts, hypotheses, changed files, tests, review, and pending human actions.
 5. `artifacts/pull-request.md`: only tests that were actually executed.
 6. The Git diff inside the isolated workspace.
+
+The fixture deliberately records implementation-shaping decisions such as the public function signature. The analyst should block when those decisions are absent instead of silently inventing an API contract.
 
 ## Explain the first real failure
 

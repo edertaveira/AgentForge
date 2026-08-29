@@ -1,7 +1,8 @@
+import type { AnalysisAgent } from "./analysis-agent.js";
 import type { ImplementationBrief, WorkItem } from "../domain/contracts.js";
 
-export class AnalystAgent {
-  analyze(item: WorkItem): ImplementationBrief {
+export class LocalAnalystAgent implements AnalysisAgent {
+  async analyze(item: WorkItem): Promise<ImplementationBrief> {
     const hasAcceptanceCriteria = item.acceptanceCriteria.length > 0;
 
     return {

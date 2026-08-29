@@ -9,7 +9,7 @@ WorkItem -> analysis -> implementation -> tests -> review -> evidence
          -> READY_FOR_HUMAN -> simulated pull request
 ```
 
-The first version intentionally runs with local fixtures and a deterministic provider. This keeps the core reproducible, cheap, and safe to record. Jira, GitHub, MCP, and remote model providers are adapters, not prerequisites for understanding the domain.
+The first version runs with local fixtures and a deterministic analysis provider by default. An optional OpenAI Agents SDK provider adds real model analysis with schema-validated output. Jira, GitHub, and MCP remain adapters rather than prerequisites for understanding the domain.
 
 ## Requirements
 
@@ -25,6 +25,37 @@ npm test
 npm run demo
 ```
 
+The default demo does not make an API request. To use the optional OpenAI analyst:
+
+```bash
+export ANALYSIS_PROVIDER=openai
+export OPENAI_API_KEY="your-key"
+export OPENAI_MODEL="gpt-5-mini"
+npm run demo
+```
+
+Never commit `.env` or place a real key in course files or recordings.
+
+### Read a real Jira work item
+
+The Jira adapter performs a read-only `GET` request to Jira Cloud. Copy `.env.example` to
+`.env` and fill in `JIRA_BASE_URL`, `JIRA_EMAIL`,
+`JIRA_API_TOKEN`, `JIRA_SPACE_KEY`, and `JIRA_ISSUE_KEY`. Then run:
+
+```bash
+npm run jira:check
+npm run demo:jira
+```
+
+The Jira description must include a heading named `Acceptance criteria` or
+`Critérios de aceite`, followed by one criterion per line or list item. Credentials are
+never written to evidence artifacts.
+
+When all three Jira connection values are present, Jira is selected automatically. Set
+`TASK_SOURCE=local` explicitly whenever you want the deterministic offline fixture instead.
+
+If `node --version` reports a release older than 22, switch to a supported runtime before recording or testing the OpenAI provider.
+
 The demo copies `examples/taskboard-template` into an isolated run directory under `.agentforge/runs`, initializes a temporary Git repository, applies the task, runs its tests, reviews the diff, and writes an evidence bundle plus a simulated pull request.
 
 ## Safety properties
@@ -35,6 +66,13 @@ The demo copies `examples/taskboard-template` into an isolated run directory und
 - external writes are simulated by default;
 - facts, hypotheses, tests, and pending validation are represented separately;
 - the final state requires human approval.
+
+## Analysis providers
+
+- `local`: deterministic, free, and used by the automated tests.
+- `openai`: uses `@openai/agents` with a Zod `outputType` for `ImplementationBrief`.
+
+Both providers implement the same application interface. The orchestrator does not know which provider produced the brief.
 
 ## Course checkpoints
 
