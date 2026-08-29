@@ -32,6 +32,8 @@ TaskBoard (local fixture or read-only Jira Cloud)
 - `agents`: one responsibility per role, with typed inputs and outputs.
 - `core`: authorization, path policy, and pull request preparation.
 - `orchestrator`: state transitions and evidence assembly.
+- `GitHubPublisher`: external-write adapter that creates a tree, commit, branch, and Pull Request
+  only with repository-scoped approval and `READY_FOR_HUMAN` evidence.
 
 ## Analysis providers
 
@@ -53,6 +55,6 @@ while genuinely implementation-shaping ambiguity still produces `blockingQuestio
 - The model behavior is deterministic so the first demonstration is reproducible.
 - Only `node --test` is allowed as an execution tool.
 - Pull Request publication is simulated and always requires a separate human action.
-- MCP and GitHub integrations are later adapters.
+- MCP remains a later adapter.
 
 These constraints are features of the teaching baseline, not claims of production completeness.

@@ -54,6 +54,27 @@ never written to evidence artifacts.
 When all three Jira connection values are present, Jira is selected automatically. Set
 `TASK_SOURCE=local` explicitly whenever you want the deterministic offline fixture instead.
 
+### Publish an approved Pull Request to GitHub
+
+Create a fine-grained GitHub token restricted to the target repository with `Contents: write`
+and `Pull requests: write`. Fill in the `GITHUB_*` values in `.env`, then verify access without
+writing anything:
+
+```bash
+npm run github:check
+```
+
+The normal demo remains simulated. After inspecting its workspace diff and evidence, publication
+requires a different command with an explicit external-write flag:
+
+```bash
+npm run github:publish -- --approve-external
+```
+
+The publisher creates one commit on a new `agentforge/<work-item>-<timestamp>` branch and opens a
+Pull Request against `main`. It can only publish `src/task.js` and `test/task.test.js`, mapped under
+`examples/taskboard-template/`. It never merges the Pull Request.
+
 If `node --version` reports a release older than 22, switch to a supported runtime before recording or testing the OpenAI provider.
 
 The demo copies `examples/taskboard-template` into an isolated run directory under `.agentforge/runs`, initializes a temporary Git repository, applies the task, runs its tests, reviews the diff, and writes an evidence bundle plus a simulated pull request.
