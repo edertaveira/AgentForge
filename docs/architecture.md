@@ -36,6 +36,9 @@ TaskBoard (local fixture or read-only Jira Cloud)
   only with repository-scoped approval and `READY_FOR_HUMAN` evidence.
 - `examples/taskboard-baseline`: immutable recording input; generated PRs target the separate
   `examples/taskboard-template` so merged demonstrations do not mutate future demo inputs.
+- `mcp`: local stdio boundary exposing bounded work-item, repository-context, and run-evidence
+  reads. MCP provides tools and context to an agent; it is not itself an agent or an authorization
+  mechanism.
 
 ## Analysis providers
 
