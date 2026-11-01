@@ -50,5 +50,6 @@ npm run check
 git diff --check
 ```
 
-Integrações externas também exigem seus checks específicos e revisão humana. Passar nos testes
-não autoriza publicar, fazer merge ou alterar Jira/GitHub automaticamente.
+Integrações externas também exigem seus checks específicos. No fluxo integrado, testes e revisão
+automatizada autorizam comentários/transições no Jira e a publicação da Pull Request. O merge
+continua sendo exclusivamente humano.

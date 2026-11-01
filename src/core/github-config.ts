@@ -3,19 +3,27 @@ export interface GitHubConfig {
   owner: string;
   repository: string;
   baseBranch: string;
-  targetPrefix: string;
+  targetDirectory: string;
 }
 
 export function githubConfigFromEnvironment(
   environment: NodeJS.ProcessEnv = process.env,
+  project?: { repository: string; baseBranch: string; targetDirectory: string },
 ): GitHubConfig {
+  const inferred = project ? githubRepositoryCoordinates(project.repository) : undefined;
   return {
     token: required(environment, "GITHUB_TOKEN"),
-    owner: required(environment, "GITHUB_OWNER"),
-    repository: required(environment, "GITHUB_REPO"),
-    baseBranch: environment.GITHUB_BASE_BRANCH?.trim() || "main",
-    targetPrefix: environment.GITHUB_TARGET_PREFIX?.trim() || "examples/taskboard-template",
+    owner: environment.GITHUB_OWNER?.trim() || inferred?.owner || required(environment, "GITHUB_OWNER"),
+    repository: environment.GITHUB_REPO?.trim() || inferred?.repository || required(environment, "GITHUB_REPO"),
+    baseBranch: environment.GITHUB_BASE_BRANCH?.trim() || project?.baseBranch || "main",
+    targetDirectory: project?.targetDirectory ?? "",
   };
+}
+
+function githubRepositoryCoordinates(remote: string): { owner: string; repository: string } | undefined {
+  const match = remote.match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i);
+  if (!match?.[1] || !match[2]) return undefined;
+  return { owner: match[1], repository: match[2] };
 }
 
 function required(environment: NodeJS.ProcessEnv, name: string): string {

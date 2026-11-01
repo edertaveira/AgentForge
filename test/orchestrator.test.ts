@@ -8,7 +8,7 @@ import { AgentForgeOrchestrator } from "../src/orchestrator.js";
 
 const projectRoot = process.cwd();
 
-test("runs the local delivery flow to READY_FOR_HUMAN", async () => {
+test("runs the local delivery flow to READY_TO_PUBLISH", async () => {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "agentforge-test-"));
   const tasks = path.join(projectRoot, "fixtures/tasks");
   const orchestrator = new AgentForgeOrchestrator(
@@ -23,9 +23,9 @@ test("runs the local delivery flow to READY_FOR_HUMAN", async () => {
 
   const outcome = await orchestrator.run("AF-101", "test-operator");
 
-  assert.equal(outcome.evidence.status, "READY_FOR_HUMAN");
+  assert.equal(outcome.evidence.status, "READY_TO_PUBLISH");
   assert.equal(outcome.evidence.review.verdict, "approved");
   assert.equal(outcome.evidence.tests[0]?.status, "passed");
   assert.equal(outcome.pullRequest.published, false);
-  assert.match(outcome.pullRequest.body, /human approval/i);
+  assert.match(outcome.pullRequest.body, /Merge remains a human-only action/i);
 });

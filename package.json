@@ -3,18 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "agentforge": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "examples/taskboard-baseline",
+    "fixtures/tasks",
+    "README.md"
+  ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/test/*.test.js",
     "demo": "npm run build && node dist/src/cli.js run AF-101 --local",
-    "demo:jira": "npm run build && node dist/src/cli.js run",
+    "agentforge": "npm run build && node dist/src/cli.js run --project=examples/taskboard",
     "jira:check": "npm run build && node dist/src/cli.js check-jira",
     "github:check": "npm run build && node dist/src/cli.js check-github",
-    "github:publish": "npm run build && node dist/src/cli.js publish-github",
     "mcp:server": "npm run build && node dist/src/mcp/server.js",
     "mcp:demo": "npm run build && node dist/src/mcp/demo.js",
     "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true }); rmSync('.agentforge', { recursive: true, force: true });\""

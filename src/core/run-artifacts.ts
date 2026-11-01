@@ -3,15 +3,15 @@ import path from "node:path";
 import type { EvidenceBundle, PullRequestDraft } from "../domain/contracts.js";
 import { resolveInside } from "./path-policy.js";
 
-export interface ApprovedRun {
+export interface StoredRun {
   workspace: string;
   evidence: EvidenceBundle;
   pullRequest: PullRequestDraft;
 }
 
-export async function loadApprovedRun(runsRoot: string, runId: string): Promise<ApprovedRun> {
+export async function loadStoredRun(runsRoot: string, runId: string): Promise<StoredRun> {
   if (!/^[A-Z][A-Z0-9_]*-\d+-\d{4}-\d{2}-\d{2}T[\d-]+Z$/.test(runId)) {
-    throw new Error(`Invalid approved run id: ${runId}`);
+    throw new Error(`Invalid run id: ${runId}`);
   }
   const runRoot = resolveInside(runsRoot, runId);
   const evidencePath = resolveInside(runRoot, "artifacts/evidence.json");
@@ -20,8 +20,8 @@ export async function loadApprovedRun(runsRoot: string, runId: string): Promise<
   const markdown = await readFile(draftPath, "utf8");
   const [heading = "", ...bodyParts] = markdown.split("\n");
   const title = heading.replace(/^#\s+/, "").trim();
-  if (!title || evidence.status !== "READY_FOR_HUMAN") {
-    throw new Error("Approved run is missing a PR title or READY_FOR_HUMAN evidence");
+  if (!title || !["READY_TO_PUBLISH", "READY_FOR_MERGE"].includes(evidence.status)) {
+    throw new Error("Stored run is missing a PR title or publishable evidence");
   }
   return {
     workspace: path.join(runRoot, "workspace"),

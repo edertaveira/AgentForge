@@ -11,7 +11,7 @@ o raciocínio e as decisões da engenharia de agentes, não a digitação mecân
 4. Autorize somente a ação necessária para a aula.
 5. Mostre os arquivos alterados e o diff relevante.
 6. Execute a validação e abra as evidências geradas.
-7. Termine com a decisão humana: corrigir, aprovar, publicar ou bloquear.
+7. Termine mostrando a decisão humana preservada: revisar e realizar ou recusar o merge.
 
 ## Bloco A — Fundamentos e fluxo local (Seções 1–9)
 
@@ -24,7 +24,7 @@ npm run demo
 ```
 
 Mostre `fixtures/tasks/AF-101.json`, o workspace isolado, `evidence.json`, o diff e o estado
-`READY_FOR_HUMAN`. Este bloco cobre arquitetura, contratos, contexto, guardrails, implementação,
+`READY_TO_PUBLISH`. Este bloco cobre arquitetura, contratos, contexto, guardrails, implementação,
 testes, revisão e orquestração. Nas aulas de construção, use o código final para explicar decisões
 e recrie mudanças pequenas com o coding agent; não redigite a aplicação inteira.
 
@@ -50,8 +50,8 @@ correto por si só.
 **Checkpoint:** `v0.2-jira` para explicar o marco, ou `main` para a demonstração mais atual.
 
 ```bash
-npm run jira:check
-npm run demo:jira
+agentforge check
+agentforge run
 ```
 
 Use uma tarefa fictícia do projeto do curso. Mostre o identificador e os critérios, mas não o
@@ -64,19 +64,19 @@ esse resultado: ele é parte do produto, não uma falha da gravação.
 **Checkpoint:** `v0.3-github` para explicar o marco, ou `main` para executar o fluxo atual.
 
 ```bash
-npm run github:check
-npm run github:publish -- --approve-external --run=<run-revisado>
+agentforge check
+agentforge run
 ```
 
-Primeiro mostre o preview, o diff, os testes realmente executados e a evidência ligada ao run.
-Somente depois verbalize a aprovação e execute a publicação. Abra a URL retornada, revise a Pull
-Request e pare antes do merge. A aula deve deixar claro que `--approve-external` representa uma
-decisão humana explícita, não um detalhe burocrático.
+Mostre o fluxo único criando branch, commit e Pull Request somente depois de testes e revisão
+automatizada. Abra a URL retornada, revise e faça o merge manual. Volte ao terminal e mostre o
+AgentForge detectando o merge, comentando no Jira, movendo o card para Concluído e encerrando em
+`COMPLETED`.
 
 ## Bloco E — Projeto final (Seção 12)
 
 Use `main` e execute o percurso completo: Jira → análise → implementação isolada → testes →
-revisão → evidências → aprovação → Pull Request. Compare o resultado com as limitações conhecidas
+revisão → evidências → Pull Request automática → merge humano. Compare o resultado com as limitações conhecidas
 e encerre mostrando como adaptar os contratos a outra linguagem sem substituir as validações.
 
 ## Ordem recomendada de gravação

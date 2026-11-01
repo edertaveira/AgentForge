@@ -21,8 +21,8 @@ export function createPullRequestDraft(evidence: EvidenceBundle): PullRequestDra
       "## Review",
       `Verdict: ${evidence.review.verdict}`,
       "",
-      "## Human approval",
-      "This draft has not been published. Review the diff and evidence before any external write.",
+      "## Automation boundary",
+      "AgentForge publishes this Pull Request automatically after tests and review pass. Merge remains a human-only action.",
     ].join("\n"),
     published: false,
   };
