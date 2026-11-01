@@ -161,10 +161,142 @@ test("loads an issue through the scoped-token gateway without a separate connect
   const item = await board.getTask("AF-1");
   assert.equal(item.id, "AF-1");
   assert.deepEqual(requestedUrls, [
-    "https://agentforge.atlassian.net/rest/api/3/issue/AF-1?fields=summary,description,labels",
+    "https://agentforge.atlassian.net/rest/api/3/issue/AF-1?fields=summary,description,labels,status,comment",
     "https://agentforge.atlassian.net/_edge/tenant_info",
-    "https://api.atlassian.com/ex/jira/cloud-123/rest/api/3/issue/AF-1?fields=summary,description,labels",
+    "https://api.atlassian.com/ex/jira/cloud-123/rest/api/3/issue/AF-1?fields=summary,description,labels,status,comment",
   ]);
+});
+
+test("posts blocking questions, applies the input flag, and moves the issue to Blocked", async () => {
+  const calls: Array<{ method: string; url: string; body?: unknown }> = [];
+  const board = new JiraTaskBoard({
+    baseUrl: "https://agentforge.atlassian.net",
+    email: "course@example.com",
+    apiToken: "secret-token",
+    spaceKey: "AF",
+    fetch: async (input, init) => {
+      const url = input.toString();
+      const method = init?.method ?? "GET";
+      calls.push({
+        method,
+        url,
+        ...(typeof init?.body === "string" ? { body: JSON.parse(init.body) } : {}),
+      });
+      if (method === "GET" && url.includes("/issue/AF-1?")) {
+        return Response.json({
+          key: "AF-1",
+          fields: {
+            summary: "Ambiguous task",
+            description: "Needs clarification",
+            labels: [],
+            status: { name: "To Do" },
+            comment: { comments: [] },
+          },
+        });
+      }
+      if (method === "GET" && url.endsWith("/transitions")) {
+        return Response.json({ transitions: [
+          { id: "31", name: "Block", to: { name: "Blocked" } },
+        ] });
+      }
+      return new Response(null, { status: method === "POST" && url.endsWith("/comment") ? 201 : 204 });
+    },
+  });
+
+  const item = await board.getTask("AF-1");
+  await board.markWaitingForInput(item, ["Which API contract should be used?"]);
+
+  assert.equal(calls.some((call) => call.method === "POST" && call.url.endsWith("/comment")), true);
+  assert.equal(calls.some((call) => call.method === "PUT" &&
+    JSON.stringify(call.body).includes("agentforge-needs-input")), true);
+  assert.equal(calls.some((call) => call.method === "POST" && call.url.endsWith("/transitions") &&
+    JSON.stringify(call.body).includes('"31"')), true);
+});
+
+test("uses a human Jira reply as technical context on the next run", async () => {
+  const board = new JiraTaskBoard({
+    baseUrl: "https://agentforge.atlassian.net",
+    email: "course@example.com",
+    apiToken: "secret-token",
+    fetch: async () => Response.json({
+      key: "AF-1",
+      fields: {
+        summary: "Add priority",
+        description: "Implement priority",
+        labels: ["agentforge-needs-input"],
+        status: { name: "Blocked" },
+        comment: { comments: [
+          { body: { type: "doc", content: [{ type: "paragraph", content: [
+            { type: "text", text: "[AgentForge:questions:abc123] Which default?" },
+          ] }] } },
+          { body: { type: "doc", content: [{ type: "paragraph", content: [
+            { type: "text", text: "Use medium as the default." },
+          ] }] } },
+        ] },
+      },
+    }),
+  });
+
+  const item = await board.getTask("AF-1");
+
+  assert.deepEqual(item.technicalContext, ["Jira clarification: Use medium as the default."]);
+});
+
+test("comments the Pull Request and moves the issue to In Review", async () => {
+  const calls: Array<{ method: string; url: string; body?: unknown }> = [];
+  let transitionLookups = 0;
+  const board = new JiraTaskBoard({
+    baseUrl: "https://agentforge.atlassian.net",
+    email: "course@example.com",
+    apiToken: "secret-token",
+    fetch: async (input, init) => {
+      const url = input.toString();
+      const method = init?.method ?? "GET";
+      calls.push({
+        method,
+        url,
+        ...(typeof init?.body === "string" ? { body: JSON.parse(init.body) } : {}),
+      });
+      if (method === "GET" && url.includes("/issue/AF-1?")) {
+        return Response.json({
+          key: "AF-1",
+          fields: {
+            summary: "Add priority",
+            description: "Implement priority",
+            labels: [],
+            status: { name: "In Progress" },
+            comment: { comments: [] },
+          },
+        });
+      }
+      if (method === "GET" && url.endsWith("/transitions")) {
+        transitionLookups += 1;
+        return Response.json({ transitions: transitionLookups === 1
+          ? [{ id: "41", name: "Request review", to: { name: "In Review" } }]
+          : [{ id: "51", name: "Complete", to: { name: "Done" } }] });
+      }
+      return new Response(null, { status: method === "POST" && url.endsWith("/comment") ? 201 : 204 });
+    },
+  });
+  const item = await board.getTask("AF-1");
+
+  const publication = {
+    number: 8,
+    url: "https://github.com/edertaveira/AgentForge/pull/8",
+    branch: "agentforge/af-1-demo",
+    commitSha: "abc123",
+  };
+  await board.markReadyForMerge(item, publication);
+  await board.markDone(item, publication);
+
+  assert.equal(calls.some((call) => call.method === "POST" && call.url.endsWith("/comment") &&
+    JSON.stringify(call.body).includes("/pull/8")), true);
+  assert.equal(calls.some((call) => call.method === "POST" && call.url.endsWith("/transitions") &&
+    JSON.stringify(call.body).includes('"41"')), true);
+  assert.equal(calls.some((call) => call.method === "POST" && call.url.endsWith("/comment") &&
+    JSON.stringify(call.body).includes("AgentForge:completed")), true);
+  assert.equal(calls.some((call) => call.method === "POST" && call.url.endsWith("/transitions") &&
+    JSON.stringify(call.body).includes('"51"')), true);
 });
 
 test("rejects an issue outside the configured Jira space", async () => {

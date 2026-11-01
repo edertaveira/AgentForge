@@ -4,7 +4,6 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { GitHubPublisher } from "../src/adapters/github-publisher.js";
-import { ApprovalGate } from "../src/core/approval-gate.js";
 import type { EvidenceBundle, PullRequestDraft } from "../src/domain/contracts.js";
 
 const evidence: EvidenceBundle = {
@@ -30,18 +29,18 @@ const evidence: EvidenceBundle = {
   },
   tests: [{ command: "node --test", status: "passed", exitCode: 0, output: "ok" }],
   review: { verdict: "approved", findings: [], acceptanceCoverage: [] },
-  status: "READY_FOR_HUMAN",
+  status: "READY_TO_PUBLISH",
   pendingHumanActions: [],
   generatedAt: "2026-08-29T00:00:00.000Z",
 };
 
 const draft: PullRequestDraft = {
   title: "AF-1: Add priority to tasks",
-  body: "This draft has not been published. Review the diff and evidence before any external write.",
+  body: "AgentForge publishes this Pull Request automatically. Merge remains a human-only action.",
   published: false,
 };
 
-test("publishes one commit and pull request only after external approval", async () => {
+test("publishes one commit and pull request automatically after checks pass", async () => {
   const workspace = await mkdtemp(path.join(os.tmpdir(), "agentforge-github-"));
   await mkdir(path.join(workspace, "src"), { recursive: true });
   await mkdir(path.join(workspace, "test"), { recursive: true });
@@ -64,47 +63,59 @@ test("publishes one commit and pull request only after external approval", async
     });
     return Response.json(responses[calls.length - 1], { status: calls.length >= 3 ? 201 : 200 });
   };
-  const gate = new ApprovalGate();
-  const approvalRequest = gate.createRequest({
-    action: "external_write",
-    reason: "test",
-    scope: ["edertaveira/AgentForge"],
-  });
-  const token = gate.approve(approvalRequest, "tester");
   const publisher = new GitHubPublisher({
     token: "secret",
     owner: "edertaveira",
     repository: "AgentForge",
     baseBranch: "main",
-    targetPrefix: "examples/taskboard-template",
-  }, gate, request);
+    targetDirectory: "examples/taskboard",
+  }, request);
 
-  const result = await publisher.publish(workspace, evidence, draft, token);
+  const result = await publisher.publish(workspace, evidence, draft);
 
   assert.equal(result.number, 2);
   assert.equal(calls.length, 6);
   assert.deepEqual((calls[2]?.body as { tree: Array<{ path: string }> }).tree.map((entry) => entry.path), [
-    "examples/taskboard-template/src/task.js",
-    "examples/taskboard-template/test/task.test.js",
+    "examples/taskboard/src/task.js",
+    "examples/taskboard/test/task.test.js",
   ]);
   assert.match(calls[4]?.url ?? "", /\/git\/refs$/);
   assert.match(calls[5]?.url ?? "", /\/pulls$/);
+  assert.equal(calls.some((call) => call.method === "PUT"), false);
+  assert.equal(calls.some((call) => /\/pulls\/\d+\/merge$/.test(call.url)), false);
 });
 
-test("rejects publication without repository-scoped external approval", async () => {
-  const gate = new ApprovalGate();
-  const wrongRequest = gate.createRequest({
-    action: "write_workspace",
-    reason: "wrong action",
-    scope: ["edertaveira/AgentForge"],
-  });
+test("rejects publication unless the automated checks reached READY_TO_PUBLISH", async () => {
   const publisher = new GitHubPublisher({
     token: "secret", owner: "edertaveira", repository: "AgentForge",
-    baseBranch: "main", targetPrefix: "examples/taskboard-template",
-  }, gate, async () => { throw new Error("network must not be called"); });
+    baseBranch: "main",
+    targetDirectory: "examples/taskboard",
+  }, async () => { throw new Error("network must not be called"); });
 
   await assert.rejects(
-    () => publisher.publish("/tmp/unused", evidence, draft, gate.approve(wrongRequest, "tester")),
-    /does not authorize action: external_write/,
+    () => publisher.publish("/tmp/unused", { ...evidence, status: "BLOCKED" }, draft),
+    /requires READY_TO_PUBLISH evidence/,
   );
+});
+
+test("waits for the human merge without calling a merge endpoint", async () => {
+  const calls: Array<{ method: string; url: string }> = [];
+  const responses = [
+    { merged_at: null },
+    { merged_at: "2026-10-31T22:00:00Z" },
+  ];
+  const publisher = new GitHubPublisher({
+    token: "secret", owner: "edertaveira", repository: "AgentForge",
+    baseBranch: "main",
+    targetDirectory: "examples/taskboard",
+  }, async (input, init) => {
+    calls.push({ method: init?.method ?? "GET", url: input.toString() });
+    return Response.json(responses.shift() ?? { merged_at: null });
+  });
+
+  const merged = await publisher.waitForMerge(8, { pollIntervalMs: 0, timeoutMs: 100 });
+
+  assert.equal(merged, true);
+  assert.deepEqual(calls.map((call) => call.method), ["GET", "GET"]);
+  assert.equal(calls.every((call) => call.url.endsWith("/pulls/8")), true);
 });

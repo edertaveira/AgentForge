@@ -14,7 +14,10 @@ export class Workspace {
   static async createRun(template: string, runsRoot: string, runId: string): Promise<string> {
     const root = path.join(runsRoot, runId, "workspace");
     await mkdir(path.dirname(root), { recursive: true });
-    await cp(template, root, { recursive: true });
+    await cp(template, root, {
+      recursive: true,
+      filter: (source) => !isExcludedWorkspacePath(template, source),
+    });
 
     runGit(root, ["init", "--quiet"]);
     runGit(root, ["config", "user.email", "agentforge@example.invalid"]);
@@ -60,6 +63,13 @@ export class Workspace {
       output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
     };
   }
+}
+
+function isExcludedWorkspacePath(template: string, source: string): boolean {
+  const relative = path.relative(template, source);
+  if (!relative) return false;
+  const [first] = relative.split(path.sep);
+  return first === ".git" || first === ".agentforge" || first === "node_modules" || first === "dist";
 }
 
 function runGit(cwd: string, args: string[]): string {

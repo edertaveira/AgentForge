@@ -1,5 +1,5 @@
 {
-  "name": "taskboard-fixture",
+  "name": "agentforge-taskboard-example",
   "private": true,
   "type": "module",
   "scripts": {

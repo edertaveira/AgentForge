@@ -3,13 +3,17 @@
 ## Delivery flow
 
 ```text
-TaskBoard (local fixture or read-only Jira Cloud)
+TaskBoard (local fixture or Jira Cloud)
      |
      v
  AnalystAgent -> ImplementationBrief
+     | ambiguity
+     +----> Jira comment + needs-input flag + Blocked
+                 |
+                 +---- human Jira reply, then rerun
      |
      v
- ApprovalGate -> ApprovalToken
+ Scoped workspace authorization
      |
      v
  ImplementerAgent -> isolated Workspace -> ChangeSet
@@ -21,21 +25,32 @@ TaskBoard (local fixture or read-only Jira Cloud)
  ReviewerAgent -> ReviewReport
      |
      v
- EvidenceBundle -> READY_FOR_HUMAN -> PullRequestDraft
+ EvidenceBundle -> READY_TO_PUBLISH -> GitHubPublisher
+     |
+     v
+ branch + commit + Pull Request -> Jira In Review -> READY_FOR_MERGE
+     |
+     v
+ human merge -> GitHub confirmation -> Jira Done -> COMPLETED
 ```
 
 ## Boundaries
 
+- `CLI`: runs from the target project directory, detects the Git root, remote, base branch, and
+  monorepo-relative target path, then stores non-secret metadata under `.agentforge/config.json`.
 - `domain`: stable contracts independent of Jira, GitHub, or a model vendor.
 - `adapters`: local task source and isolated filesystem implementation.
-- `JiraTaskBoard` reads summary, description, labels, and acceptance criteria through Jira Cloud REST API v3. It performs no Jira writes.
+- `JiraTaskBoard` reads the issue and its comments, posts blocking questions and PR evidence,
+  manages the `agentforge-needs-input` label, and uses available workflow transitions.
 - `agents`: one responsibility per role, with typed inputs and outputs.
 - `core`: authorization, path policy, and pull request preparation.
 - `orchestrator`: state transitions and evidence assembly.
-- `GitHubPublisher`: external-write adapter that creates a tree, commit, branch, and Pull Request
-  only with repository-scoped approval and `READY_FOR_HUMAN` evidence.
-- `examples/taskboard-baseline`: immutable recording input; generated PRs target the separate
-  `examples/taskboard-template` so merged demonstrations do not mutate future demo inputs.
+- `GitHubPublisher`: creates a tree, commit, branch, and Pull Request automatically, but only with
+  `READY_TO_PUBLISH` evidence, passing tests, an approved automated review, and an allowlisted diff.
+  It contains no merge endpoint.
+- `examples/taskboard-baseline`: immutable fixture copied into the isolated execution workspace.
+- `examples/taskboard`: real demonstration application changed by the generated Git branch and
+  Pull Request. The branch provides isolation; no disposable target directory is created.
 - `mcp`: local stdio boundary exposing bounded work-item, repository-context, and run-evidence
   reads. MCP provides tools and context to an agent; it is not itself an agent or an authorization
   mechanism.
@@ -59,7 +74,7 @@ while genuinely implementation-shaping ambiguity still produces `blockingQuestio
   labels or explicit task evidence and approved file scope, never from a hard-coded Jira number.
 - The model behavior is deterministic so the first demonstration is reproducible.
 - Only `node --test` is allowed as an execution tool.
-- Pull Request publication is simulated and always requires a separate human action.
+- Jira runs publish the Pull Request automatically. Merge remains a separate human action.
 - MCP remains a later adapter.
 
 These constraints are features of the teaching baseline, not claims of production completeness.

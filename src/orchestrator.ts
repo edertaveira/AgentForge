@@ -9,6 +9,7 @@ import { ReviewerAgent } from "./agents/reviewer.js";
 import { TesterAgent } from "./agents/tester.js";
 import { ApprovalGate } from "./core/approval-gate.js";
 import { createPullRequestDraft } from "./core/pr-draft.js";
+import { WaitingForInputError } from "./core/waiting-for-input.js";
 import type { EvidenceBundle, PullRequestDraft, RunStatus } from "./domain/contracts.js";
 
 export interface AgentForgePaths {
@@ -46,8 +47,11 @@ export class AgentForgeOrchestrator {
     const brief = await this.analyst.analyze(workItem);
 
     if (brief.blockingQuestions.length > 0) {
-      throw new Error(`BLOCKED: ${brief.blockingQuestions.join("; ")}`);
+      await this.taskBoard.markWaitingForInput?.(workItem, brief.blockingQuestions);
+      throw new WaitingForInputError(workItem.id, brief.blockingQuestions);
     }
+
+    await this.taskBoard.markInProgress?.(workItem);
 
     const workspaceRoot = await Workspace.createRun(this.paths.template, this.paths.runs, runId);
     const workspace = new Workspace(workspaceRoot, this.gate);
@@ -66,7 +70,7 @@ export class AgentForgeOrchestrator {
     const tests = this.tester.test(workspace);
     status = "REVIEWING";
     const review = this.reviewer.review(workItem, changes, tests);
-    status = review.verdict === "approved" ? "READY_FOR_HUMAN" : "BLOCKED";
+    status = review.verdict === "approved" ? "READY_TO_PUBLISH" : "BLOCKED";
 
     const evidence: EvidenceBundle = {
       workItem,
@@ -75,7 +79,7 @@ export class AgentForgeOrchestrator {
       tests,
       review,
       status,
-      pendingHumanActions: ["Inspect the diff", "Approve or reject external Pull Request publication"],
+      pendingHumanActions: [],
       generatedAt: new Date().toISOString(),
     };
     const pullRequest = createPullRequestDraft(evidence);

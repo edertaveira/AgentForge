@@ -2,11 +2,12 @@
 
 AgentForge is a small, auditable reference project for the course **Engenharia de Agentes de IA: do Jira ao Pull Request**.
 
-It demonstrates a supervised delivery flow:
+It demonstrates an autonomous delivery flow with one deliberate human boundary:
 
 ```text
 WorkItem -> analysis -> implementation -> tests -> review -> evidence
-         -> READY_FOR_HUMAN -> simulated pull request
+         -> READY_TO_PUBLISH -> branch + commit + Pull Request
+         -> READY_FOR_MERGE -> human merge
 ```
 
 The first version runs with local fixtures and a deterministic analysis provider by default. An optional OpenAI Agents SDK provider adds real model analysis with schema-validated output. Jira, GitHub, and MCP remain adapters rather than prerequisites for understanding the domain.
@@ -25,6 +26,37 @@ npm test
 npm run demo
 ```
 
+## Install and initialize the CLI
+
+Build and link the development version once:
+
+```bash
+npm run build
+npm link
+```
+
+Then enter the repository, or a project directory inside a monorepo, and initialize AgentForge:
+
+```bash
+cd /path/to/project
+agentforge init
+```
+
+The CLI detects the Git root, `origin`, base branch, and the project's real path inside the
+repository. It stores non-secret metadata in `.agentforge/config.json`; credentials remain in the
+environment or the nearest `.env` file. No manually configured GitHub destination prefix is used.
+
+Use the CLI with the default Jira work item or an explicit key:
+
+```bash
+agentforge check
+agentforge run
+agentforge run AF-2
+```
+
+The integrated run refuses to start while the target project has uncommitted changes. This ensures
+that its isolated workspace and Pull Request start from a known repository state.
+
 The default demo does not make an API request. To use the optional OpenAI analyst with the Jira
 source configured later in this guide:
 
@@ -32,7 +64,7 @@ source configured later in this guide:
 export ANALYSIS_PROVIDER=openai
 export OPENAI_API_KEY="your-key"
 export OPENAI_MODEL="gpt-5-mini"
-npm run demo:jira
+agentforge run
 ```
 
 `npm run demo` always forces the local task and analyst, even when `.env` contains real Jira or
@@ -40,15 +72,13 @@ OpenAI credentials. This keeps the first lesson offline and reproducible.
 
 Never commit `.env` or place a real key in course files or recordings.
 
-### Read a real Jira work item
+### Use Jira as the autonomous workflow board
 
-The Jira adapter performs a read-only `GET` request to Jira Cloud. Copy `.env.example` to
-`.env` and fill in `JIRA_BASE_URL`, `JIRA_EMAIL`,
-`JIRA_API_TOKEN`, `JIRA_SPACE_KEY`, and `JIRA_ISSUE_KEY`. Then run:
+Copy `.env.example` to `.env` and fill in the Jira connection, status names, and issue key. Then run:
 
 ```bash
-npm run jira:check
-npm run demo:jira
+agentforge check
+agentforge run
 ```
 
 The Jira description must include a heading named `Acceptance criteria` or
@@ -58,27 +88,37 @@ never written to evidence artifacts.
 When all three Jira connection values are present, Jira is selected automatically. Set
 `TASK_SOURCE=local` explicitly whenever you want the deterministic offline fixture instead.
 
-### Publish an approved Pull Request to GitHub
+The Jira adapter moves an accepted task to In Progress. If analysis finds a material ambiguity,
+it posts the questions as a comment, applies the `agentforge-needs-input` label, and moves the card
+to Blocked when that transition exists. Reply on the issue and run `agentforge run` again: the
+reply becomes analysis context, the flag is removed, and the delivery resumes. After the Pull
+Request is created, the card moves to In Review and receives the PR URL.
+
+### Publish a Pull Request automatically
 
 Create a fine-grained GitHub token restricted to the target repository with `Contents: write`
 and `Pull requests: write`. Fill in the `GITHUB_*` values in `.env`, then verify access without
 writing anything:
 
 ```bash
-npm run github:check
+agentforge check
 ```
 
-The normal demo remains simulated. After inspecting its workspace diff and evidence, publication
-requires a different command with an explicit external-write flag:
+`agentforge run` runs the complete delivery automatically. After analysis, isolated
+implementation, tests, and review pass, the publisher creates one commit on a new
+`agentforge/<work-item>-<timestamp>` branch and opens a Pull Request against `main`. It can only
+publish `src/task.js` and `test/task.test.js`, mapped to the real demonstration application in
+`examples/taskboard/`.
 
-```bash
-npm run github:publish -- --approve-external --run=<reviewed-run-id>
-```
+There is intentionally no merge operation in AgentForge. The final status is `READY_FOR_MERGE`,
+and merging the Pull Request is the only human action left in the delivery flow. The running
+command polls the PR; after the human merge, it comments on Jira, moves the card to Done, and records
+`COMPLETED` in the evidence.
 
-The publisher creates one commit on a new `agentforge/<work-item>-<timestamp>` branch and opens a
-Pull Request against `main`. It can only publish `src/task.js` and `test/task.test.js`, mapped under
-`examples/taskboard-template/`. The run identifier binds approval to the exact evidence and diff
-already reviewed, so publication never reruns the model. It never merges the Pull Request.
+The destination is intentionally fixed: the agent changes the real demonstration application on a
+new Git branch, exactly as it would change an ordinary project. To repeat the same lesson after its
+Pull Request has been merged, restore the course checkpoint or use a new ticket that requests a
+different change; do not create disposable destination folders.
 
 ### Inspect context through local MCP
 
@@ -101,18 +141,19 @@ If `node --version` reports a release older than 22, switch to a supported runti
 
 The demo copies the immutable `examples/taskboard-baseline` into an isolated run directory under
 `.agentforge/runs`, initializes a temporary Git repository, applies the task, runs its tests,
-reviews the diff, and writes an evidence bundle plus a simulated pull request. Real GitHub
-publication maps approved files into `examples/taskboard-template`, which may evolve after merges
-without making future recordings non-reproducible.
+reviews the diff, and writes an evidence bundle plus a Pull Request description. In Jira mode,
+successful evidence is published automatically to GitHub and recorded in `publication.json`.
+Local mode remains offline and reproducible.
 
 ## Safety properties
 
 - tools resolve paths inside an explicitly authorized workspace;
 - writes require an approval token;
 - shell commands come from a fixed allowlist;
-- external writes are simulated by default;
+- GitHub publication happens only after tests and automated review pass;
 - facts, hypotheses, tests, and pending validation are represented separately;
-- the final state requires human approval.
+- the publisher exposes no merge operation;
+- the final state leaves only the Pull Request merge to a human.
 
 ## Analysis providers
 

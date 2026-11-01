@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { WorkItem } from "../domain/contracts.js";
 import { createTaskBoard, taskSourceFromEnvironment } from "../core/task-source.js";
-import { loadApprovedRun } from "../core/approved-run.js";
+import { loadStoredRun } from "../core/run-artifacts.js";
 import { resolveInside } from "../core/path-policy.js";
 
 export interface McpContextToolsOptions {
@@ -34,7 +34,7 @@ export function createMcpContextTools(options: McpContextToolsOptions) {
     },
 
     async getRunEvidence(runId: string) {
-      const run = await loadApprovedRun(path.join(options.projectRoot, ".agentforge/runs"), runId);
+      const run = await loadStoredRun(path.join(options.projectRoot, ".agentforge/runs"), runId);
       return {
         workItemId: run.evidence.workItem.id,
         status: run.evidence.status,

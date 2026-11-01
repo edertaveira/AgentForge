@@ -5,7 +5,9 @@ export type RunStatus =
   | "IMPLEMENTING"
   | "TESTING"
   | "REVIEWING"
-  | "READY_FOR_HUMAN"
+  | "READY_TO_PUBLISH"
+  | "READY_FOR_MERGE"
+  | "COMPLETED"
   | "BLOCKED";
 
 export interface AcceptanceCriterion {
@@ -37,7 +39,7 @@ export interface ImplementationBrief {
 
 export interface ApprovalRequest {
   id: string;
-  action: "write_workspace" | "external_write";
+  action: "write_workspace";
   reason: string;
   scope: string[];
 }
@@ -87,7 +89,15 @@ export interface EvidenceBundle {
   review: ReviewReport;
   status: RunStatus;
   pendingHumanActions: string[];
+  publication?: PullRequestPublication;
   generatedAt: string;
+}
+
+export interface PullRequestPublication {
+  number: number;
+  url: string;
+  branch: string;
+  commitSha: string;
 }
 
 export interface PullRequestDraft {

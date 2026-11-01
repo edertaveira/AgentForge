@@ -11,6 +11,11 @@ export interface TaskSourceConfig {
     email: string;
     apiToken: string;
     spaceKey?: string;
+    blockedLabel?: string;
+    inProgressStatus?: string;
+    blockedStatus?: string;
+    inReviewStatus?: string;
+    doneStatus?: string;
   };
 }
 
@@ -39,6 +44,11 @@ export function taskSourceFromEnvironment(
       email,
       apiToken,
       ...(environment.JIRA_SPACE_KEY ? { spaceKey: environment.JIRA_SPACE_KEY } : {}),
+      ...(environment.JIRA_BLOCKED_LABEL ? { blockedLabel: environment.JIRA_BLOCKED_LABEL } : {}),
+      ...(environment.JIRA_STATUS_IN_PROGRESS ? { inProgressStatus: environment.JIRA_STATUS_IN_PROGRESS } : {}),
+      ...(environment.JIRA_STATUS_BLOCKED ? { blockedStatus: environment.JIRA_STATUS_BLOCKED } : {}),
+      ...(environment.JIRA_STATUS_IN_REVIEW ? { inReviewStatus: environment.JIRA_STATUS_IN_REVIEW } : {}),
+      ...(environment.JIRA_STATUS_DONE ? { doneStatus: environment.JIRA_STATUS_DONE } : {}),
     },
   };
 }
